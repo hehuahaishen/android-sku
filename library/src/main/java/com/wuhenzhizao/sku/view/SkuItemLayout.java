@@ -21,9 +21,12 @@ import java.util.List;
  */
 
 public class SkuItemLayout extends LinearLayout {
-    private TextView attributeNameTv;
-    private FlowLayout attributeValueLayout;
-    private OnSkuItemSelectListener listener;
+    /** 这类属性的总称 -- 颜色/尺寸 */
+    private TextView mAttributeNameTv;
+    /** 存放所有属性的"流式列表" */
+    private FlowLayout mAttributeValueLayout;
+    /** 属性的点击事件 */
+    private OnSkuItemSelectListener mSelectListener;
 
     public SkuItemLayout(Context context) {
         super(context);
@@ -43,30 +46,33 @@ public class SkuItemLayout extends LinearLayout {
     private void init(Context context) {
         setOrientation(VERTICAL);
 
-        attributeNameTv = new TextView(context);
-        attributeNameTv.setId(ViewUtils.generateViewId());
-        attributeNameTv.setTextColor(context.getResources().getColor(R.color.comm_text_gray_dark));
-        attributeNameTv.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14);
-        attributeNameTv.setIncludeFontPadding(false);
+        /* 属性的总称文本 */
+        mAttributeNameTv = new TextView(context);
+        mAttributeNameTv.setId(ViewUtils.generateViewId());
+        mAttributeNameTv.setTextColor(context.getResources().getColor(R.color.comm_text_gray_dark));
+        mAttributeNameTv.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14);
+        mAttributeNameTv.setIncludeFontPadding(false);
         LayoutParams attributeNameParams = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
         attributeNameParams.leftMargin = ScreenUtils.dp2PxInt(context, 15);
         attributeNameParams.topMargin = ScreenUtils.dp2PxInt(context, 15);
-        attributeNameTv.setLayoutParams(attributeNameParams);
-        addView(attributeNameTv);
+        mAttributeNameTv.setLayoutParams(attributeNameParams);
+        addView(mAttributeNameTv);
 
-        attributeValueLayout = new FlowLayout(context);
-        attributeValueLayout.setId(ViewUtils.generateViewId());
-        attributeValueLayout.setMinimumHeight(ScreenUtils.dp2PxInt(context, 25));
-        attributeValueLayout.setChildSpacing(ScreenUtils.dp2PxInt(context, 15));
-        attributeValueLayout.setRowSpacing(ScreenUtils.dp2PxInt(context, 15));
+        /* 存放所有属性的"流式列表" */
+        mAttributeValueLayout = new FlowLayout(context);
+        mAttributeValueLayout.setId(ViewUtils.generateViewId());
+        mAttributeValueLayout.setMinimumHeight(ScreenUtils.dp2PxInt(context, 25));
+        mAttributeValueLayout.setChildSpacing(ScreenUtils.dp2PxInt(context, 15));
+        mAttributeValueLayout.setRowSpacing(ScreenUtils.dp2PxInt(context, 15));
         LayoutParams attributeValueParams = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
         attributeValueParams.leftMargin = ScreenUtils.dp2PxInt(context, 15);
         attributeValueParams.rightMargin = ScreenUtils.dp2PxInt(context, 15);
         attributeValueParams.topMargin = ScreenUtils.dp2PxInt(context, 15);
         attributeValueParams.bottomMargin = ScreenUtils.dp2PxInt(context, 10);
-        attributeValueLayout.setLayoutParams(attributeValueParams);
-        addView(attributeValueLayout);
+        mAttributeValueLayout.setLayoutParams(attributeValueParams);
+        addView(mAttributeValueLayout);
 
+        /* 底下的横线 */
         View line = new View(context);
         line.setBackgroundResource(R.color.comm_line);
         LayoutParams lineParams = new LayoutParams(LayoutParams.MATCH_PARENT, 1);
@@ -77,13 +83,21 @@ public class SkuItemLayout extends LinearLayout {
         addView(line);
     }
 
-    public void setListener(OnSkuItemSelectListener listener) {
-        this.listener = listener;
+    public void setSelectListener(OnSkuItemSelectListener selectListener) {
+        this.mSelectListener = selectListener;
     }
 
+
+    /**
+     * 根据传递过来的 "属性列表"， 为每个项生成对应的"控件"再添加到"流式列表"中
+     * @param position
+     * @param attributeName
+     * @param attributeValueList
+     */
     public void buildItemLayout(int position, String attributeName, List<String> attributeValueList) {
-        attributeNameTv.setText(attributeName);
-        attributeValueLayout.removeAllViewsInLayout();
+        mAttributeNameTv.setText(attributeName);
+        mAttributeValueLayout.removeAllViewsInLayout();
+
         for (int i = 0; i < attributeValueList.size(); i++) {
             SkuItemView itemView = new SkuItemView(getContext());
             itemView.setId(ViewUtils.generateViewId());
@@ -92,29 +106,31 @@ public class SkuItemLayout extends LinearLayout {
             itemView.setLayoutParams(new FlowLayout.LayoutParams(
                     FlowLayout.LayoutParams.WRAP_CONTENT,
                     ScreenUtils.dp2PxInt(getContext(), 25)));
-            attributeValueLayout.addView(itemView);
+            mAttributeValueLayout.addView(itemView);
         }
     }
 
     /**
      * 清空是否可点击，选中状态
+     * 不选中
+     * 不可点击
      */
     public void clearItemViewStatus() {
-        for (int i = 0; i < attributeValueLayout.getChildCount(); i++) {
-            SkuItemView itemView = (SkuItemView) attributeValueLayout.getChildAt(i);
+        for (int i = 0; i < mAttributeValueLayout.getChildCount(); i++) {
+            SkuItemView itemView = (SkuItemView) mAttributeValueLayout.getChildAt(i);
             itemView.setSelected(false);
             itemView.setEnabled(false);
         }
     }
 
     /**
-     * 设置指定属性为可点击状态
+     * 设置 -- "指定属性"为"可点击状态"
      *
      * @param attributeValue
      */
     public void optionItemViewEnableStatus(String attributeValue) {
-        for (int i = 0; i < attributeValueLayout.getChildCount(); i++) {
-            SkuItemView itemView = (SkuItemView) attributeValueLayout.getChildAt(i);
+        for (int i = 0; i < mAttributeValueLayout.getChildCount(); i++) {
+            SkuItemView itemView = (SkuItemView) mAttributeValueLayout.getChildAt(i);
             if (attributeValue.equals(itemView.getAttributeValue())) {
                 itemView.setEnabled(true);
             }
@@ -122,13 +138,13 @@ public class SkuItemLayout extends LinearLayout {
     }
 
     /**
-     * 设置指定属性为选中状态
+     * 设置 -- "指定属性"为"选中状态"
      *
      * @param selectValue
      */
     public void optionItemViewSelectStatus(SkuAttribute selectValue) {
-        for (int i = 0; i < attributeValueLayout.getChildCount(); i++) {
-            SkuItemView itemView = (SkuItemView) attributeValueLayout.getChildAt(i);
+        for (int i = 0; i < mAttributeValueLayout.getChildCount(); i++) {
+            SkuItemView itemView = (SkuItemView) mAttributeValueLayout.getChildAt(i);
             if (selectValue.getValue().equals(itemView.getAttributeValue())) {
                 itemView.setEnabled(true);
                 itemView.setSelected(true);
@@ -137,12 +153,12 @@ public class SkuItemLayout extends LinearLayout {
     }
 
     /**
-     * 当前属性集合是否有选中项
+     * "当前属性集合" -- 是否有"选中项"
      * @return
      */
     public boolean isSelected() {
-        for (int i = 0; i < attributeValueLayout.getChildCount(); i++) {
-            SkuItemView itemView = (SkuItemView) attributeValueLayout.getChildAt(i);
+        for (int i = 0; i < mAttributeValueLayout.getChildCount(); i++) {
+            SkuItemView itemView = (SkuItemView) mAttributeValueLayout.getChildAt(i);
             if (itemView.isSelected()) {
                 return true;
             }
@@ -151,25 +167,40 @@ public class SkuItemLayout extends LinearLayout {
     }
 
     /**
-     * 获取属性名称
+     * 获取 -- "属性名称"
      * @return
      */
     public String getAttributeName() {
-        return attributeNameTv.getText().toString();
+        return mAttributeNameTv.getText().toString();
     }
 
+
+    /**
+     * item 被点击后 -- 组合下数据 通过"接口"传递
+     * @param position
+     * @param view
+     */
     private void onSkuItemClicked(int position, SkuItemView view) {
         boolean selected = !view.isSelected();
+
         SkuAttribute attribute = new SkuAttribute();
-        attribute.setKey(attributeNameTv.getText().toString());
+        attribute.setKey(mAttributeNameTv.getText().toString());
         attribute.setValue(view.getAttributeValue());
-        listener.onSelect(position, selected, attribute);
+
+        mSelectListener.onSelect(position, selected, attribute);
     }
+
+
 
     private class ItemClickListener implements OnClickListener {
         private int position;
         private SkuItemView view;
 
+        /**
+         *
+         * @param position   流式瀑布（大属性分类id）的下标
+         * @param view       点击的属性
+         */
         ItemClickListener(int position, SkuItemView view) {
             this.position = position;
             this.view = view;
@@ -181,6 +212,10 @@ public class SkuItemLayout extends LinearLayout {
         }
     }
 
+
+    /**
+     * 传递数据的接口
+     */
     interface OnSkuItemSelectListener {
         void onSelect(int position, boolean select, SkuAttribute attribute);
     }

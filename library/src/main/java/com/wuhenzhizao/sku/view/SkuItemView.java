@@ -33,6 +33,7 @@ public class SkuItemView extends TextView {
     }
 
     private void init(Context context) {
+        // 设置 字体和背景
         setBackgroundResource(R.drawable.sku_item_selector);
         setTextColor(getResources().getColorStateList(R.color.sku_item_text_selector));
         setTextSize(TypedValue.COMPLEX_UNIT_DIP, 11);

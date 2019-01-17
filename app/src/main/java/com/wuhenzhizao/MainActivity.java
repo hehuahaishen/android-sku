@@ -58,6 +58,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        // 申请权限
         AndPermission.with(this)
                 .requestCode(0)
                 .permission(
@@ -78,10 +79,12 @@ public class MainActivity extends AppCompatActivity {
                 .rationale(new RationaleListener() {
                     @Override
                     public void showRequestPermissionRationale(int requestCode, Rationale rationale) {
+                        // 此对话框可以自定义，调用rationale.resume()就可以继续申请。
                         AndPermission.rationaleDialog(MainActivity.this, rationale);
                     }
                 }).start();
     }
+
 
 
     private void showSkuDialog() {

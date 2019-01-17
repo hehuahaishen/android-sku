@@ -20,10 +20,15 @@ import java.util.Map;
  * Created by wuhenzhizao on 2017/7/31.
  */
 public class SkuSelectScrollView extends SkuMaxHeightScrollView implements SkuItemLayout.OnSkuItemSelectListener {
-    private LinearLayout skuContainerLayout;
-    private List<Sku> skuList;
-    private List<SkuAttribute> selectedAttributeList;  // 存放当前属性选中信息
-    private OnSkuListener listener;                    // sku选中状态回调接口
+
+    /** 所有属性的布局 -- 包含多个SkuItemLayout  */
+    private LinearLayout mSkuContainerLayout;
+    private List<Sku> mSkuList;
+
+    /** 存放 -- 当前 -- 选中属性的信息 */
+    private List<SkuAttribute> mSelectedAttributeList;
+    /** sku选中状态 -- 回调接口 */
+    private OnSkuListener mListener;
 
     public SkuSelectScrollView(Context context) {
         super(context);
@@ -36,13 +41,15 @@ public class SkuSelectScrollView extends SkuMaxHeightScrollView implements SkuIt
     }
 
     private void init(Context context, AttributeSet attrs) {
-        setFillViewport(true);
+        setFillViewport(true);                          // 拉伸填满
         setOverScrollMode(OVER_SCROLL_NEVER);
-        skuContainerLayout = new LinearLayout(context, attrs);
-        skuContainerLayout.setId(ViewUtils.generateViewId());
-        skuContainerLayout.setOrientation(LinearLayout.VERTICAL);
-        skuContainerLayout.setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
-        addView(skuContainerLayout);
+
+        // 添加一个 "纵向的LinearLayout" -- 所有属性的布局（包含多个SkuItemLayout）
+        mSkuContainerLayout = new LinearLayout(context, attrs);
+        mSkuContainerLayout.setId(ViewUtils.generateViewId());
+        mSkuContainerLayout.setOrientation(LinearLayout.VERTICAL);
+        mSkuContainerLayout.setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
+        addView(mSkuContainerLayout);
     }
 
     /**
@@ -51,8 +58,9 @@ public class SkuSelectScrollView extends SkuMaxHeightScrollView implements SkuIt
      * @param delegate
      */
     public void setSkuViewDelegate(SkuViewDelegate delegate) {
-        this.listener = delegate.getListener();
+        this.mListener = delegate.getListener();
     }
+
 
     /**
      * 设置监听接口
@@ -60,8 +68,9 @@ public class SkuSelectScrollView extends SkuMaxHeightScrollView implements SkuIt
      * @param listener {@link OnSkuListener}
      */
     public void setListener(OnSkuListener listener) {
-        this.listener = listener;
+        this.mListener = listener;
     }
+
 
     /**
      * 绑定sku数据
@@ -69,36 +78,42 @@ public class SkuSelectScrollView extends SkuMaxHeightScrollView implements SkuIt
      * @param skuList
      */
     public void setSkuList(List<Sku> skuList) {
-        this.skuList = skuList;
+        this.mSkuList = skuList;
         // 清空sku视图
-        skuContainerLayout.removeAllViews();
+        mSkuContainerLayout.removeAllViews();
 
         // 获取分组的sku集合
         Map<String, List<String>> dataMap = getSkuGroupByName(skuList);
-        selectedAttributeList = new LinkedList<>();
+
+
+        mSelectedAttributeList = new LinkedList<>();
         int index = 0;
         for (Iterator<Map.Entry<String, List<String>>> it = dataMap.entrySet().iterator(); it.hasNext(); ) {
             Map.Entry<String, List<String>> entry = it.next();
 
-            // 构建sku视图
+            // 构建sku视图 -- 每一个大属性
             SkuItemLayout itemLayout = new SkuItemLayout(getContext());
             itemLayout.setId(ViewUtils.generateViewId());
             itemLayout.setLayoutParams(new LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
             ));
             itemLayout.buildItemLayout(index++, entry.getKey(), entry.getValue());
-            itemLayout.setListener(this);
-            skuContainerLayout.addView(itemLayout);
+            itemLayout.setSelectListener(this);
+            mSkuContainerLayout.addView(itemLayout);
+
             // 初始状态下，所有属性信息设置为空
-            selectedAttributeList.add(new SkuAttribute(entry.getKey(), ""));
+            mSelectedAttributeList.add(new SkuAttribute(entry.getKey(), ""));
         }
+
+
         // 一个sku时，默认选中
         if (skuList.size() == 1) {
-            selectedAttributeList.clear();
-            for (SkuAttribute attribute : this.skuList.get(0).getAttributes()) {
-                selectedAttributeList.add(new SkuAttribute(attribute.getKey(), attribute.getValue()));
+            mSelectedAttributeList.clear();
+            for (SkuAttribute attribute : this.mSkuList.get(0).getAttributes()) {
+                mSelectedAttributeList.add(new SkuAttribute(attribute.getKey(), attribute.getValue()));
             }
         }
+
         // 清除所有选中状态
         clearAllLayoutStatus();
         // 设置是否可点击
@@ -106,6 +121,7 @@ public class SkuSelectScrollView extends SkuMaxHeightScrollView implements SkuIt
         // 设置选中状态
         optionLayoutSelectStatus();
     }
+
 
     /**
      * 将sku根据属性名进行分组
@@ -119,9 +135,11 @@ public class SkuSelectScrollView extends SkuMaxHeightScrollView implements SkuIt
             for (SkuAttribute attribute : sku.getAttributes()) {
                 String attributeName = attribute.getKey();
                 String attributeValue = attribute.getValue();
+
                 if (!dataMap.containsKey(attributeName)) {
                     dataMap.put(attributeName, new LinkedList<String>());
                 }
+
                 List<String> valueList = dataMap.get(attributeName);
                 if (!valueList.contains(attributeValue)) {
                     dataMap.get(attributeName).add(attributeValue);
@@ -131,12 +149,13 @@ public class SkuSelectScrollView extends SkuMaxHeightScrollView implements SkuIt
         return dataMap;
     }
 
+
     /**
-     * 重置所有属性的选中状态
+     * 重置 "所有属性" 的选中状态
      */
     private void clearAllLayoutStatus() {
-        for (int i = 0; i < skuContainerLayout.getChildCount(); i++) {
-            SkuItemLayout itemLayout = (SkuItemLayout) skuContainerLayout.getChildAt(i);
+        for (int i = 0; i < mSkuContainerLayout.getChildCount(); i++) {  // 一个个大属性循环
+            SkuItemLayout itemLayout = (SkuItemLayout) mSkuContainerLayout.getChildAt(i);
             itemLayout.clearItemViewStatus();
         }
     }
@@ -145,57 +164,71 @@ public class SkuSelectScrollView extends SkuMaxHeightScrollView implements SkuIt
      * 设置所有属性的Enable状态，即是否可点击
      */
     private void optionLayoutEnableStatus() {
-        int childCount = skuContainerLayout.getChildCount();
-        if (childCount <= 1) {
+        int childCount = mSkuContainerLayout.getChildCount();
+
+        if (childCount <= 1) {                          /* 只有一大类属性 */
             optionLayoutEnableStatusSingleProperty();
-        } else {
+        } else {                                        /* 有多种大属性 */
             optionLayoutEnableStatusMultipleProperties();
         }
     }
 
+    /**
+     * 只有一大类属性 -- 设置所有属性的Enable状态，即是否可点击
+     */
     private void optionLayoutEnableStatusSingleProperty() {
-        SkuItemLayout itemLayout = (SkuItemLayout) skuContainerLayout.getChildAt(0);
+        SkuItemLayout itemLayout = (SkuItemLayout) mSkuContainerLayout.getChildAt(0);
+
         // 遍历sku列表
-        for (int i = 0; i < skuList.size(); i++) {
+        for (int i = 0; i < mSkuList.size(); i++) {
             // 属性值是否可点击flag
-            Sku sku = skuList.get(i);
-            List<SkuAttribute> attributeBeanList = skuList.get(i).getAttributes();
+            Sku sku = mSkuList.get(i);
+            List<SkuAttribute> attributeBeanList = mSkuList.get(i).getAttributes();
+
             if (sku.getStockQuantity() > 0) {
-                String attributeValue = attributeBeanList.get(0).getValue();
-                itemLayout.optionItemViewEnableStatus(attributeValue);
+                String attributeValue = attributeBeanList.get(0).getValue();  // 有这个属性的商品
+                itemLayout.optionItemViewEnableStatus(attributeValue);        // 设置这个属性可以点击
             }
         }
     }
 
+    /**
+     * 有多种大属性 -- 设置所有属性的Enable状态，即是否可点击
+     */
     private void optionLayoutEnableStatusMultipleProperties() {
-        for (int i = 0; i < skuContainerLayout.getChildCount(); i++) {
-            SkuItemLayout itemLayout = (SkuItemLayout) skuContainerLayout.getChildAt(i);
-            // 遍历sku列表
-            for (int j = 0; j < skuList.size(); j++) {
+
+        for (int i = 0; i < mSkuContainerLayout.getChildCount(); i++) {
+
+            SkuItemLayout itemLayout = (SkuItemLayout) mSkuContainerLayout.getChildAt(i);
+
+            /* 遍历sku列表 */
+            for (int j = 0; j < mSkuList.size(); j++) {
                 // 属性值是否可点击flag
                 boolean flag = false;
-                Sku sku = skuList.get(j);
+                Sku sku = mSkuList.get(j);
                 List<SkuAttribute> attributeBeanList = sku.getAttributes();
-                // 遍历选中信息列表
-                for (int k = 0; k < selectedAttributeList.size(); k++) {
+                /* 遍历选中信息列表 */
+                for (int k = 0; k < mSelectedAttributeList.size(); k++) {
                     // i = k，跳过当前属性，避免多次设置是否可点击
                     if (i == k) continue;
                     // 选中信息为空，则说明未选中，无法判断是否有不可点击的情形，跳过
-                    if ("".equals(selectedAttributeList.get(k).getValue())) continue;
+                    if ("".equals(mSelectedAttributeList.get(k).getValue())) continue;
                     // 选中信息列表中不包含当前sku的属性，则sku组合不存在，设置为不可点击
                     // 库存为0，设置为不可点击
-                    if (!selectedAttributeList.get(k).getValue().equals(attributeBeanList.get(k).getValue())
+                    if (!mSelectedAttributeList.get(k).getValue().equals(attributeBeanList.get(k).getValue())
                             || sku.getStockQuantity() == 0) {
                         flag = true;
                         break;
                     }
                 }
+
                 // flag 为false时，可点击
                 if (!flag) {
                     String attributeValue = attributeBeanList.get(i).getValue();
                     itemLayout.optionItemViewEnableStatus(attributeValue);
                 }
             }
+
         }
     }
 
@@ -203,9 +236,9 @@ public class SkuSelectScrollView extends SkuMaxHeightScrollView implements SkuIt
      * 设置所有属性的选中状态
      */
     private void optionLayoutSelectStatus() {
-        for (int i = 0; i < skuContainerLayout.getChildCount(); i++) {
-            SkuItemLayout itemLayout = (SkuItemLayout) skuContainerLayout.getChildAt(i);
-            itemLayout.optionItemViewSelectStatus(selectedAttributeList.get(i));
+        for (int i = 0; i < mSkuContainerLayout.getChildCount(); i++) {
+            SkuItemLayout itemLayout = (SkuItemLayout) mSkuContainerLayout.getChildAt(i);
+            itemLayout.optionItemViewSelectStatus(mSelectedAttributeList.get(i));
         }
     }
 
@@ -215,7 +248,7 @@ public class SkuSelectScrollView extends SkuMaxHeightScrollView implements SkuIt
      * @return
      */
     private boolean isSkuSelected() {
-        for (SkuAttribute attribute : selectedAttributeList) {
+        for (SkuAttribute attribute : mSelectedAttributeList) {
             if (TextUtils.isEmpty(attribute.getValue())) {
                 return false;
             }
@@ -229,8 +262,8 @@ public class SkuSelectScrollView extends SkuMaxHeightScrollView implements SkuIt
      * @return
      */
     public String getFirstUnelectedAttributeName() {
-        for (int i = 0; i < skuContainerLayout.getChildCount(); i++) {
-            SkuItemLayout itemLayout = (SkuItemLayout) skuContainerLayout.getChildAt(i);
+        for (int i = 0; i < mSkuContainerLayout.getChildCount(); i++) {
+            SkuItemLayout itemLayout = (SkuItemLayout) mSkuContainerLayout.getChildAt(i);
             if (!itemLayout.isSelected()) {
                 return itemLayout.getAttributeName();
             }
@@ -248,12 +281,12 @@ public class SkuSelectScrollView extends SkuMaxHeightScrollView implements SkuIt
         if (!isSkuSelected()) {
             return null;
         }
-        for (Sku sku : skuList) {
+        for (Sku sku : mSkuList) {
             List<SkuAttribute> attributeList = sku.getAttributes();
             // 将sku的属性列表与selectedAttributeList匹配，完全匹配则为已选中sku
             boolean flag = true;
             for (int i = 0; i < attributeList.size(); i++) {
-                if (!isSameSkuAttribute(attributeList.get(i), selectedAttributeList.get(i))) {
+                if (!isSameSkuAttribute(attributeList.get(i), mSelectedAttributeList.get(i))) {
                     flag = false;
                 }
             }
@@ -270,9 +303,9 @@ public class SkuSelectScrollView extends SkuMaxHeightScrollView implements SkuIt
      * @param sku
      */
     public void setSelectedSku(Sku sku) {
-        selectedAttributeList.clear();
+        mSelectedAttributeList.clear();
         for (SkuAttribute attribute : sku.getAttributes()) {
-            selectedAttributeList.add(new SkuAttribute(attribute.getKey(), attribute.getValue()));
+            mSelectedAttributeList.add(new SkuAttribute(attribute.getKey(), attribute.getValue()));
         }
         // 清除所有选中状态
         clearAllLayoutStatus();
@@ -298,10 +331,10 @@ public class SkuSelectScrollView extends SkuMaxHeightScrollView implements SkuIt
     public void onSelect(int position, boolean selected, SkuAttribute attribute) {
         if (selected) {
             // 选中，保存选中信息
-            selectedAttributeList.set(position, attribute);
+            mSelectedAttributeList.set(position, attribute);
         } else {
             // 取消选中，清空保存的选中信息
-            selectedAttributeList.get(position).setValue("");
+            mSelectedAttributeList.get(position).setValue("");
         }
         clearAllLayoutStatus();
         // 设置是否可点击
@@ -310,11 +343,11 @@ public class SkuSelectScrollView extends SkuMaxHeightScrollView implements SkuIt
         optionLayoutSelectStatus();
         // 回调接口
         if (isSkuSelected()) {
-            listener.onSkuSelected(getSelectedSku());
+            mListener.onSkuSelected(getSelectedSku());
         } else if (selected) {
-            listener.onSelect(attribute);
+            mListener.onSelect(attribute);
         } else {
-            listener.onUnselected(attribute);
+            mListener.onUnselected(attribute);
         }
     }
 }

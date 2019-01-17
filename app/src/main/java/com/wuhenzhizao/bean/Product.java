@@ -6,6 +6,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.wuhenzhizao.R;
 import com.wuhenzhizao.sku.bean.Sku;
+import com.wuhenzhizao.utils.LogUtils;
 
 import java.util.List;
 
@@ -29,6 +30,7 @@ public class Product {
 
     public static Product get(Context context) {
         String json = context.getString(R.string.product);
+        LogUtils.printJsonAll(json);
         return new Gson().fromJson(json, new TypeToken<Product>() {
         }.getType());
     }
