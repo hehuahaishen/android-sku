@@ -38,6 +38,8 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
 
         binding = DataBindingUtil.setContentView(this, R.layout.activity_main);
+
+        // 标题 左边的返回 结束程序
         cartBinding = DataBindingUtil.bind(binding.titlebar.getRightCustomView());
         binding.titlebar.setListener(new CommonTitleBar.OnTitleBarListener() {
             @Override
@@ -47,6 +49,8 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+
+        // 底下的按钮
         binding.btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -78,6 +82,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }).start();
     }
+
 
     private void showSkuDialog() {
         if (dialog == null) {
